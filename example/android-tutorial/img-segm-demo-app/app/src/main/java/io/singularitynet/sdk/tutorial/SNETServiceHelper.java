@@ -1,5 +1,6 @@
 package io.singularitynet.sdk.tutorial;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.util.Log;
 
@@ -8,10 +9,14 @@ import java.util.concurrent.TimeUnit;
 
 import io.grpc.ManagedChannel;
 
+import io.grpc.okhttp.OkHttpChannelBuilder;
+import io.singularitynet.service.semanticsegmentation.SemanticSegmentationGrpc;
+
 public class SNETServiceHelper
 {
     private HandlerMainActivity handlerMain;
     private ManagedChannel channel = null;
+    private SemanticSegmentationGrpc.SemanticSegmentationBlockingStub stub;
 
     private Thread threadServiceInit;
     private Thread threadServiceCalling;
@@ -30,12 +35,7 @@ public class SNETServiceHelper
                 handlerMain.sendEmptyMessage(HandlerMainActivity.MSG_DISABLE_ACTIVITY_GUI);
                 try
                 {
-                    //Put it here to be compilable
-                    throw new InterruptedException();
-                }
-                catch (InterruptedException e)
-                {
-                    Log.e("OpenServiceChannelTask", "Channel opening interrupted", e);
+                    openProxyServiceChannel();
                 }
                 catch (Exception e)
                 {
@@ -46,6 +46,20 @@ public class SNETServiceHelper
         });
 
         threadServiceInit.start();
+    }
+
+    public void openProxyServiceChannel()
+    {
+        String proxyHost = "semantic-segmentation.singularitynet.io";
+        int proxyPort = 7020;
+
+        channel = OkHttpChannelBuilder
+                .forAddress(proxyHost, proxyPort)
+                .useTransportSecurity()
+                .build();
+
+
+        stub = SemanticSegmentationGrpc.newBlockingStub(channel);
     }
 
     public void closeServiceChannel()
